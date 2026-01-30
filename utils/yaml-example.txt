@@ -1,0 +1,21 @@
+meta:
+  appName: "My Next.js App"
+  baseUrl: "http://localhost:3000"
+
+scenarios:
+  - name: "About Page Check"
+    path: "/about"
+    tests:
+      # 1. Check if we actually landed on the page (Look for the main header)
+      - name: "Check if we actually landed on the page (Look for the main header)"
+        type: "assert_visible"
+        selector: "h1"
+
+      # 2. strict check: The h1 should say "About"
+      - type: "assert_text"
+        selector: "h1"
+        value: "About"
+
+      # 3. (Optional) Check for other common elements like a nav bar
+      - type: "assert_visible"
+        selector: "nav"
