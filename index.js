@@ -16,6 +16,8 @@ import { getCriticalSourceCode, getProjectStructure } from "./lib/fileTreeParser
 import { runTests } from "./lib/runTests.js";
 import { runPlaywright } from "./lib/runPlaywright.js";
 import { loop } from "./lib/loop.js";
+import { saveApiKey } from "./lib/registerAndFetchKey.js";
+import readline from "readline";
 
 const banner = `
 ${chalk.bold.cyan('┌─────────────────────────────────────────────────────────────────┐')}
@@ -44,6 +46,31 @@ program
   .configureOutput({
     writeErr: (str) => process.stderr.write(chalk.red(str)),
     writeOut: (str) => process.stdout.write(str)
+  });
+
+program
+  .command('login')
+  .description('Authenticate BotIntern with your Gemini API Key')
+  .action(() => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    console.log(chalk.cyan('🤖 BotIntern Login'));
+    console.log(chalk.dim('Get your free key at: https://aistudio.google.com/app/apikey'));
+
+    rl.question('\n🔑 Paste your Gemini API Key: ', (key) => {
+      if (!key || key.trim().length === 0) {
+        console.log(chalk.red('❌ Invalid key.'));
+        rl.close();
+        return;
+      }
+
+      saveApiKey(key.trim());
+      console.log(chalk.green('\n✨ Success! Key saved globally. You can now use "botintern test" and "botintern loop" commands.'));
+      rl.close();
+    });
   });
 
 program.command('scan')
@@ -273,13 +300,14 @@ program.command("generate-yaml")
       color: 'magenta'
     }).start();
 
+    const yamlPath = `${cwd}/vibe.yaml`;
     let currentYaml = "";
-    if (fs.existsSync('vibe.yaml')) {
-      currentYaml = fs.readFileSync('vibe.yaml', 'utf-8');
+    if (fs.existsSync(yamlPath)) {
+      currentYaml = fs.readFileSync(yamlPath, 'utf-8');
     }
 
     const yaml = await generateYaml([fileTree, sourceCode, currentYaml, ""]);
-    fs.writeFileSync('vibe.yaml', yaml);
+    fs.writeFileSync(yamlPath, yaml);
 
     yamlSpinner.succeed({
       text: chalk.green('✨ YAML test cases generated'),
