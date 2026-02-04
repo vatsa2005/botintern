@@ -2,7 +2,9 @@
   "name": "botintern",
   "module": "index.js",
   "type": "module",
-  "private": true,
+  "bin": {
+    "botintern": "./index.js"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
