@@ -11,7 +11,6 @@ import { fixBuild, generateYaml } from "./lib/ai.js";
 import fs from "fs";
 import { extractErrorFile } from "./utils/errorExtractor.js";
 import path from "path";
-import { setupPlaywright } from "./utils/setupPlaywright.js";
 import { getCriticalSourceCode, getProjectStructure } from "./lib/fileTreeParser.js";
 import { runTests } from "./lib/runTests.js";
 import { runPlaywright } from "./lib/runPlaywright.js";
@@ -239,11 +238,8 @@ program.command("test")
         color: 'yellow'
       }).start();
 
-      await runTests(page);
-      testSpinner.succeed({
-        text: chalk.green('✅ Tests completed'),
-        symbol: '🎉'
-      });
+      const testResult = await runTests(page);
+      testSpinner.stop();
 
       const cleanupSpinner = ora({
         text: chalk.blue('🧹 Cleaning up...'),
@@ -257,11 +253,25 @@ program.command("test")
         symbol: '✔'
       });
 
-      console.log(chalk.green('┌─ ') + chalk.white('TEST RESULTS') + chalk.green(' ──────────────────────'));
-      console.log(chalk.green('│') + ' ' + chalk.white('🎯 Status: ') + chalk.green('PASSED'));
-      console.log(chalk.green('│') + ' ' + chalk.white('📊 Coverage: ') + chalk.gray('Automated testing complete'));
-      console.log(chalk.green('│') + ' ' + chalk.gray('💡 All checks passed successfully'));
-      console.log(chalk.green('└─') + chalk.green('─'.repeat(45)));
+      // Display results based on actual test outcome
+      if (testResult.success) {
+        console.log(chalk.green('┌─ ') + chalk.white('TEST RESULTS') + chalk.green(' ──────────────────────'));
+        console.log(chalk.green('│') + ' ' + chalk.white('🎯 Status: ') + chalk.green('PASSED'));
+        console.log(chalk.green('│') + ' ' + chalk.white('📊 Tests: ') + chalk.gray(`${testResult.passedTests}/${testResult.totalTests} passed`));
+        console.log(chalk.green('│') + ' ' + chalk.gray('💡 All checks passed successfully'));
+        console.log(chalk.green('└─') + chalk.green('─'.repeat(45)));
+      } else {
+        console.log(chalk.red('┌─ ') + chalk.white('TEST RESULTS') + chalk.red(' ──────────────────────'));
+        console.log(chalk.red('│') + ' ' + chalk.white('🎯 Status: ') + chalk.red('FAILED'));
+        if (testResult.totalTests) {
+          console.log(chalk.red('│') + ' ' + chalk.white('📊 Tests: ') + chalk.yellow(`${testResult.passedTests}/${testResult.totalTests} passed`));
+          console.log(chalk.red('│') + ' ' + chalk.white('❌ Failures: ') + chalk.red(`${testResult.failures?.length || 0}`));
+        } else if (testResult.error) {
+          console.log(chalk.red('│') + ' ' + chalk.white('❌ Error: ') + chalk.red(testResult.error));
+        }
+        console.log(chalk.red('└─') + chalk.red('─'.repeat(45)));
+        process.exit(1);
+      }
     } catch (error) {
       spinner.fail({
         text: chalk.red('❌ Test execution failed'),
