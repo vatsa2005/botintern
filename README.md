@@ -228,7 +228,7 @@ We're just getting started. Here's what's coming next:
 
 ## 📄 License
 
-BotIntern is [MIT licensed](LICENSE).
+BotIntern is MIT licensed.
 
 ---
 
@@ -240,7 +240,7 @@ We welcome contributions! Whether it's:
 - 📝 Documentation improvements
 - 🔧 Code contributions
 
-Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
+Feel free to open an issue or submit a pull request on GitHub!
 
 ---
 
