@@ -12,7 +12,7 @@
 
 **🎬 Demo GIF Coming Soon**
 
-*[Placeholder for Demo GIF showing BotIntern in action]*
+
 
 ---
 
