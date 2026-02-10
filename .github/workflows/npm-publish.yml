@@ -3,10 +3,10 @@
 
 name: Node.js Package
 
-on: 
+on:
   push:
-    # only trigger on branches, not on tags
-    branches: 'main'
+    branches:
+      - main
 
 jobs:
   build:
@@ -17,10 +17,15 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      # If you have a build script (like for TypeScript), uncomment the line below
+      # - run: npm run build
 
-  publish-npm:
+  publish-canary:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,6 +33,25 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm publish --access=public
+      
+      # --- NEW STEP: Create the Snapshot Version ---
+      - name: Set Canary Version
+        run: |
+          # 1. Get the current version from package.json (e.g., 1.0.0)
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          
+          # 2. Get the short git commit hash (e.g., a1b2c3d)
+          SHA=$(git rev-parse --short HEAD)
+          
+          # 3. Combine them (e.g., 1.0.0-canary.a1b2c3d)
+          NEW_VERSION="$BASE_VERSION-canary.$SHA"
+          
+          # 4. Update package.json version without creating a git tag
+          npm version $NEW_VERSION --no-git-tag-version
+          
+          echo "Snapshot version created: $NEW_VERSION"
+
+      # --- MODIFIED STEP: Publish with 'canary' tag ---
+      - run: npm publish --access=public --tag canary
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
