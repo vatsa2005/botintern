@@ -6,7 +6,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/@vatzzza/botintern?color=blue&logo=npm)](https://www.npmjs.com/package/@vatzzza/botintern)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%201.5%20Flash-4285F4?logo=google)](https://ai.google.dev/)
+[![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%203.0%20Pro-4285F4?logo=google)](https://ai.google.dev/)
 
 ---
 
