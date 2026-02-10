@@ -1,6 +1,3 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
-
 name: Node.js Package
 
 on:
@@ -9,49 +6,67 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      # If you have a build script (like for TypeScript), uncomment the line below
-      # - run: npm run build
-
-  publish-canary:
-    needs: build
+  build-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://registry.npmjs.org/
-      - run: npm ci
-      
-      # --- NEW STEP: Create the Snapshot Version ---
-      - name: Set Canary Version
-        run: |
-          # 1. Get the current version from package.json (e.g., 1.0.0)
-          BASE_VERSION=$(node -p "require('./package.json').version")
-          
-          # 2. Get the short git commit hash (e.g., a1b2c3d)
-          SHA=$(git rev-parse --short HEAD)
-          
-          # 3. Combine them (e.g., 1.0.0-canary.a1b2c3d)
-          NEW_VERSION="$BASE_VERSION-canary.$SHA"
-          
-          # 4. Update package.json version without creating a git tag
-          npm version $NEW_VERSION --no-git-tag-version
-          
-          echo "Snapshot version created: $NEW_VERSION"
+          registry-url: 'https://registry.npmjs.org'
 
-      # --- MODIFIED STEP: Publish with 'canary' tag ---
-      - run: npm publish --access=public --tag canary
+      - run: npm ci
+
+      - name: Check Version & Publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+        run: |
+          # --- CONFIGURATION ---
+          PACKAGE_NAME="@vatzzza/botintern"
+          
+          # --- 1. GET LOCAL VERSION ---
+          # Extract version from package.json
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          
+          # --- 2. GET REMOTE VERSION ---
+          # Fetch latest version from npm. If package doesn't exist, default to 0.0.0
+          REMOTE_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
+          
+          echo "=============================="
+          echo "🔍 VERSION CHECK"
+          echo "   Local (package.json): $LOCAL_VERSION"
+          echo "   Remote (npm registry): $REMOTE_VERSION"
+          echo "=============================="
+
+          # --- 3. DECISION LOGIC ---
+          if [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
+            echo "🚀 Version Bump Detected ($LOCAL_VERSION != $REMOTE_VERSION)"
+            echo "   Action: Publishing STABLE Release to 'latest' tag..."
+            
+            npm publish --access=public
+            
+            echo "✅ Stable release published successfully!"
+            
+          else
+            echo "🧪 Versions match ($LOCAL_VERSION)"
+            echo "   Action: Publishing CANARY Snapshot to 'canary' tag..."
+            
+            # Create unique canary version ID (e.g., 1.0.0-canary.a1b2c3d)
+            SHA=$(git rev-parse --short HEAD)
+            CANARY_VERSION="$LOCAL_VERSION-canary.$SHA"
+            
+            echo "   Snapshot Version: $CANARY_VERSION"
+            
+            # Temporarily update package.json (does not push to git)
+            npm version "$CANARY_VERSION" --no-git-tag-version --force
+            
+            # Publish with 'canary' tag
+            npm publish --access=public --tag canary
+            
+            echo "✅ Canary snapshot published successfully!"
+            echo "   Install with: npm install $PACKAGE_NAME@canary"
+          fi
