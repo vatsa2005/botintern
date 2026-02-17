@@ -456,4 +456,6 @@ git push origin feature/your-feature-name
 
 ⭐ **Star this repo** if BotIntern saved you from debugging at 2 AM!
 
+*Do not just blame, contribute. 😉*
+
 </div>
